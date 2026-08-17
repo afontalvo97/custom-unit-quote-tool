@@ -1,0 +1,9 @@
+# Source pricing lists — internal material, kept out of the public repo.
+# Needed only to regenerate assets/pricing-data.js via tools/extract_pricing.py.
+*.pdf
+
+# Internal training decks used as the spec for the quoting rules.
+*.html
+!index.html
+
+.DS_Store

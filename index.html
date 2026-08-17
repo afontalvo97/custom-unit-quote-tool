@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom Unit Quote Tool — New Image &amp; Hair Visions</title>
+<meta name="description" content="Internal tool for quoting custom hair systems from the Classic, Signature and Elite pricing lists.">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💇</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">NI&amp;HV</span>
+      <span class="brand-text">
+        <strong>Custom Unit Quote Tool</strong>
+        <em id="effective">Pricing list effective —</em>
+      </span>
+    </div>
+    <div class="levels" role="radiogroup" aria-label="Pricing level">
+      <button type="button" class="level" data-level="classic" role="radio" aria-checked="true">Classic</button>
+      <button type="button" class="level" data-level="signature" role="radio" aria-checked="false">Signature</button>
+      <button type="button" class="level" data-level="elite" role="radio" aria-checked="false">Elite</button>
+    </div>
+  </div>
+</header>
+
+<div id="test-panel" hidden></div>
+
+<main class="layout">
+
+  <!-- ------------------------------ INPUTS ------------------------------ -->
+  <form id="quote-form" class="panel inputs" autocomplete="off">
+
+    <section class="card">
+      <h2><span class="step">1</span> Size of the base</h2>
+      <div class="seg" role="radiogroup" aria-label="How the unit is measured">
+        <label class="seg-item"><input type="radio" name="sizeMode" value="wl" checked><span>Width × Length</span></label>
+        <label class="seg-item"><input type="radio" name="sizeMode" value="manual"><span>Circumference / pick tier</span></label>
+      </div>
+
+      <div class="row" id="wl-inputs">
+        <label class="field">
+          <span>Width (in)</span>
+          <input type="number" id="width" step="0.25" min="0" placeholder="e.g. 10">
+        </label>
+        <span class="times">×</span>
+        <label class="field">
+          <span>Length (in)</span>
+          <input type="number" id="length" step="0.25" min="0" placeholder="e.g. 11">
+        </label>
+      </div>
+
+      <label class="field" id="manual-tier" hidden>
+        <span>Size tier</span>
+        <select id="tier-select">
+          <option value="toh">Top of Head</option>
+          <option value="threeQuarter">3/4 Cap</option>
+          <option value="full">Full Cap</option>
+        </select>
+      </label>
+
+      <p class="readout" id="size-readout">Enter width and length — 0–79 = Top of Head · 79.1–99 = 3/4 Cap · 99+ = Full Cap.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span> Hair length &amp; type</h2>
+      <div class="row">
+        <label class="field">
+          <span>Hair length (in)</span>
+          <input type="number" id="hair-length" step="0.5" min="1" placeholder="e.g. 10">
+        </label>
+        <label class="field grow">
+          <span>Hair type</span>
+          <select id="hair-type"></select>
+        </label>
+      </div>
+      <p class="hint">Hair length is already built into the unit price — just pull the right line. Base type (mono, lace, skin…) never changes the price.</p>
+      <p class="readout" id="length-readout"></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span> Gray hair</h2>
+      <label class="field">
+        <span>Gray type</span>
+        <select id="gray"></select>
+      </label>
+      <label class="field" id="cwh-field" hidden>
+        <span>% of gray (CWH only)</span>
+        <select id="cwh-percent"></select>
+      </label>
+      <p class="hint">Human Hair, Yak and High Heat gray are flat rates by unit size — the % of gray does not matter. Regular Synthetic gray is free. CWH is the exception: priced by % of gray.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">4</span> Density</h2>
+      <div class="row">
+        <label class="field">
+          <span>Density (%)</span>
+          <input type="number" id="density" step="5" min="50" value="100">
+        </label>
+        <div class="chips" id="density-chips">
+          <button type="button" data-density="100">100%</button>
+          <button type="button" data-density="115">115%</button>
+          <button type="button" data-density="130">130%</button>
+          <button type="button" data-density="150">150%</button>
+          <button type="button" data-density="160">160%</button>
+          <button type="button" data-density="170">170%</button>
+          <button type="button" data-density="180">180%</button>
+          <button type="button" data-density="190">190%</button>
+          <button type="button" data-density="200">200%</button>
+        </div>
+      </div>
+      <p class="readout" id="density-readout"></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">5</span> Extra charges</h2>
+
+      <div class="row">
+        <label class="field">
+          <span>Comb clips (qty)</span>
+          <input type="number" id="clips" min="0" step="1" value="0">
+        </label>
+        <label class="field grow">
+          <span>Colorless rooting / invisible knots</span>
+          <select id="knots"></select>
+        </label>
+      </div>
+
+      <label class="check" id="lace-check">
+        <input type="checkbox" id="lace-base">
+        <span>Lace base — colorless rooting is not charged</span>
+      </label>
+
+      <div class="row">
+        <label class="field grow">
+          <span>Enclosed extra hair</span>
+          <select id="spare-hair"></select>
+        </label>
+        <label class="field">
+          <span>Extra fronts (qty)</span>
+          <input type="number" id="extra-fronts" min="0" step="1" value="0">
+        </label>
+      </div>
+
+      <label class="check"><input type="checkbox" id="root-color"><span>Root color / streaking</span></label>
+      <label class="check"><input type="checkbox" id="french-top"><span>French injection — Top</span></label>
+      <label class="check"><input type="checkbox" id="french-part"><span>French injection — Part</span></label>
+    </section>
+
+    <section class="card subtle">
+      <label class="check">
+        <input type="checkbox" id="repair-mode">
+        <span><strong>Quote a repair instead</strong> — repairs are priced off the repair list; density and add-ons do not apply.</span>
+      </label>
+      <p class="hint">The factory decides whether a unit can be repaired, which is why no deposit is charged on repairs.</p>
+    </section>
+
+    <div class="form-actions">
+      <button type="button" id="reset" class="ghost">Reset</button>
+    </div>
+  </form>
+
+  <!-- ------------------------------ QUOTE ------------------------------ -->
+  <aside class="panel quote">
+    <div class="card quote-card" id="quote-card">
+      <div class="quote-head">
+        <h2>Quote</h2>
+        <span class="badge" id="quote-badge">Classic · —</span>
+      </div>
+
+      <div id="quote-errors" class="alerts error" hidden></div>
+      <ul class="lines" id="quote-lines"></ul>
+
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
+        <div class="total-row" id="density-row"><span id="density-label">Density</span><strong id="density-amount">$0.00</strong></div>
+        <div class="total-row grand"><span>Total estimate</span><strong id="total">$0.00</strong></div>
+      </div>
+
+      <div id="quote-warnings" class="alerts warn" hidden></div>
+
+      <p class="disclaimer">“This is just an estimate based on the information you provided. The price may change once we receive the custom order form.”</p>
+
+      <div class="quote-actions">
+        <button type="button" id="copy" class="primary">Copy quote</button>
+        <button type="button" id="print" class="ghost">Print / PDF</button>
+      </div>
+      <p class="micro">Say the disclaimer on the phone and put it in writing — every single quote. Nothing here is saved or sent anywhere.</p>
+    </div>
+  </aside>
+</main>
+
+<footer class="footer">
+  Internal use only · Prices pulled from the {Classic, Signature, Elite} pricing lists ·
+  Questions? Ask the Custom Department.
+</footer>
+
+<script src="assets/pricing-data.js"></script>
+<script src="assets/pricing-engine.js"></script>
+<script src="assets/tests.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
