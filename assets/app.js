@@ -282,9 +282,10 @@
   $('quote-form').addEventListener('change', update);
   $('quote-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
-  $('reset').addEventListener('click', function () {
-    $('quote-form').reset();
-    $('density').value = 100;
+  $('reset-btn').addEventListener('click', function () {
+    // Call reset through the prototype: a form exposes its own controls as named
+    // properties, so any control called "reset" would otherwise shadow the method.
+    HTMLFormElement.prototype.reset.call($('quote-form'));
     update();
   });
 
