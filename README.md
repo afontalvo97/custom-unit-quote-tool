@@ -16,7 +16,8 @@ Nothing is stored and nothing is sent anywhere — the whole thing runs in the b
    already baked into the base price.
 4. **Gray** — Human / Yak / High Heat are flat rates by size tier; CWH is priced by % of gray;
    Regular Synthetic gray is free.
-5. **Density** — under 150% is free, 150–170% adds 50%, 180% adds 75%, 181%+ adds 100%.
+5. **Density** — under 100% and under 150% are free, 150–170% adds 50%, 180% adds 75%,
+   181%+ adds 100%.
 6. **Extras** — comb clips, colorless rooting / invisible knots, root color / streaking,
    French injection (top / part), enclosed extra hair, extra fronts.
 
@@ -34,8 +35,8 @@ no deposit — the factory decides whether a unit can be repaired).
 ## Verifying the math
 
 Open `index.html?test=1`. A panel at the top runs the 10 worked quotes from the
-"CUSTOM QUOTES" training deck plus 5 guardrail cases and shows pass/fail for each.
-All 15 must pass before shipping a change.
+"CUSTOM QUOTES" training deck plus 13 guardrail cases and shows pass/fail for each.
+All 23 must pass before shipping a change.
 
 From the command line:
 
@@ -99,3 +100,25 @@ option and shows a warning telling the rep to confirm with the Custom Department
 - **High Heat gray on High Heat fiber** is charged, per the training deck: when it is unclear,
   quote it to be safe.
 - **Lace base** zeroes the colorless-rooting charge and says so on the quote line.
+
+## Company-specific size rule
+
+An **8" × 10"** base is a **3/4 Cap for New Image** but a **Top of Head for HVI**. The tool
+prices it as a 3/4 Cap and raises a notice telling the rep to switch to
+"Circumference / pick tier" and select Top of Head if the order goes through HVI. Pricing is
+untouched — only the notice is new. If other dimensions land differently between the two
+companies, add them to `HVI_TOH_DIMENSIONS` in `assets/pricing-engine.js`.
+
+## Length caps beyond the printed list
+
+The pricing list carries rows the factory will not actually build. These are quoted from the
+row so the estimate is never low, with a notice attached:
+
+| Item | Available up to | Rows on the list up to |
+| --- | --- | --- |
+| European Hair | 14" | 18" |
+| Yak gray | 6" | any size tier |
+| Human Hair gray | 10" | any size tier |
+| CWH | 6" | any size tier |
+
+Caps live on `HAIR_TYPES` (`maxQuoteLength`) and `GRAY_OPTIONS` (`maxLength`) in the engine.

@@ -77,17 +77,63 @@
 
     { name: 'Guard — repair, Full Cap 12"',
       input: q({ mode: 'repair', tier: 'full', hairLength: 12 }),
-      subtotal: 545, total: 545 }
+      subtotal: 545, total: 545 },
+
+    // --- Requested changes, Aug 2026 ---
+
+    { name: 'HVI — 8x10 keeps 3/4 Cap pricing and flags the HVI Top of Head difference',
+      input: q({ tier: 'threeQuarter', width: 8, length: 10, hairLength: 6 }),
+      subtotal: 496, total: 496,
+      warns: ['a Top of Head for HVI'] },
+
+    { name: 'HVI — 10x8 flags it too (dimensions in either order)',
+      input: q({ tier: 'threeQuarter', width: 10, length: 8, hairLength: 6 }),
+      subtotal: 496, total: 496,
+      warns: ['a Top of Head for HVI'] },
+
+    { name: 'HVI — picking the tier by hand drops the 8x10 notice',
+      input: q({ tier: 'toh', width: 0, length: 0, hairLength: 6 }),
+      subtotal: 366, total: 366, noWarns: true },
+
+    { name: 'European hair — 16" is past the 14" cap, still priced, flagged',
+      input: q({ tier: 'toh', hairType: 'euro', hairLength: 16 }),
+      subtotal: 1555, total: 1555,
+      warns: ['European Hair only goes up to 14"'] },
+
+    { name: 'European hair — 14" is inside the cap, no flag',
+      input: q({ tier: 'toh', hairType: 'euro', hairLength: 14 }),
+      subtotal: 1362, total: 1362, noWarns: true },
+
+    { name: 'Yak gray — 8" is past the 6" cap, still priced, flagged',
+      input: q({ tier: 'threeQuarter', hairLength: 8, gray: 'yak' }),
+      subtotal: 594, total: 594,
+      warns: ['Yak gray is listed only up to 6"'] },
+
+    { name: 'Yak gray — 6" is inside the cap, no flag',
+      input: q({ tier: 'threeQuarter', hairLength: 6, gray: 'yak' }),
+      subtotal: 524, total: 524, noWarns: true },
+
+    { name: 'Density — under 100% carries no extra charge',
+      input: q({ tier: 'full', hairLength: 14, density: 'under100' }),
+      subtotal: 1353, total: 1353, noWarns: true }
   ];
 
   function run() {
     return CASES.map(function (c) {
       var r = global.QuoteEngine.quote(c.input);
       var ok = r.errors.length === 0 && r.subtotal === c.subtotal && r.total === c.total;
+      if (ok && c.warns) {
+        ok = c.warns.every(function (needle) {
+          return r.warnings.some(function (w) { return w.indexOf(needle) !== -1; });
+        });
+      }
+      if (ok && c.noWarns) {
+        ok = !c.warnings || r.warnings.length === 0;
+      }
       return {
         name: c.name, pass: ok,
         expected: { subtotal: c.subtotal, total: c.total },
-        actual: { subtotal: r.subtotal, total: r.total, errors: r.errors }
+        actual: { subtotal: r.subtotal, total: r.total, errors: r.errors, warnings: r.warnings }
       };
     });
   }

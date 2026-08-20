@@ -52,15 +52,19 @@
   }
 
   function readInput() {
+    var manual = document.querySelector('input[name="sizeMode"]:checked').value === 'manual';
     return {
       level: state.level,
       mode: $('repair-mode').checked ? 'repair' : 'unit',
       tier: currentTier(),
+      // Only meaningful in width x length mode; picking a tier by hand overrides it.
+      width: manual ? 0 : num($('width')),
+      length: manual ? 0 : num($('length')),
       hairType: $('hair-type').value,
       hairLength: num($('hair-length')),
       gray: $('gray').value,
       cwhPercent: $('cwh-percent').value,
-      density: num($('density')) || 100,
+      density: state.densityUnder100 ? E.UNDER_100 : (num($('density')) || 100),
       laceBase: $('lace-base').checked,
       knots: $('knots').value,
       clips: num($('clips')),
@@ -108,9 +112,14 @@
   function renderDensityReadout(input) {
     var el = $('density-readout');
     var band = null;
-    for (var i = 0; i < E.DENSITY_BANDS.length; i++) {
-      var b = E.DENSITY_BANDS[i];
-      if (input.density >= b.min && input.density <= b.max) { band = b; break; }
+    if (input.density === E.UNDER_100) {
+      band = E.byId(E.DENSITY_BANDS, E.UNDER_100);
+    } else {
+      for (var i = 0; i < E.DENSITY_BANDS.length; i++) {
+        var b = E.DENSITY_BANDS[i];
+        if (b.min === undefined) continue;
+        if (input.density >= b.min && input.density <= b.max) { band = b; break; }
+      }
     }
     el.className = band && band.rate ? 'readout strong' : 'readout';
     el.textContent = band ? band.label : '';
@@ -253,7 +262,10 @@
     renderQuote(input, result);
 
     document.querySelectorAll('#density-chips button').forEach(function (b) {
-      b.classList.toggle('active', Number(b.dataset.density) === input.density);
+      var d = b.dataset.density;
+      b.classList.toggle('active', d === E.UNDER_100
+        ? input.density === E.UNDER_100
+        : Number(d) === input.density);
     });
 
     state.lastText = quoteText(input, result);
@@ -273,9 +285,20 @@
 
   document.querySelectorAll('#density-chips button').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      $('density').value = btn.dataset.density;
+      if (btn.dataset.density === E.UNDER_100) {
+        // No single number stands for "under 100%", so it is a mode of its own.
+        state.densityUnder100 = true;
+        $('density').value = '';
+      } else {
+        state.densityUnder100 = false;
+        $('density').value = btn.dataset.density;
+      }
       update();
     });
+  });
+
+  $('density').addEventListener('input', function () {
+    if ($('density').value !== '') state.densityUnder100 = false;
   });
 
   $('quote-form').addEventListener('input', update);
@@ -286,6 +309,7 @@
     // Call reset through the prototype: a form exposes its own controls as named
     // properties, so any control called "reset" would otherwise shadow the method.
     HTMLFormElement.prototype.reset.call($('quote-form'));
+    state.densityUnder100 = false;
     update();
   });
 

@@ -33,7 +33,7 @@
   var HAIR_TYPES = [
     { id: 'regular', code: '', label: 'Regular Hair' },
     { id: 'remy', code: 'R', label: 'Remy / Cuticle Hair' },
-    { id: 'euro', code: 'E', label: 'European Hair' },
+    { id: 'euro', code: 'E', label: 'European Hair', maxQuoteLength: 14 },
     { id: 'highHeat', code: 'F', label: 'High Heat / Endura Fiber' },
     { id: 'highHeatRemy', code: 'M', label: 'High Heat Fiber w/ Indian Remy' }
   ];
@@ -42,7 +42,7 @@
     { id: 'none', label: 'No gray', charged: false },
     { id: 'synthetic', label: 'Regular Synthetic gray', charged: false, note: 'Regular Synthetic gray carries no extra charge.' },
     { id: 'human', label: 'Human Hair gray', charged: true, prefix: 'CUSHGREY', maxLength: 10 },
-    { id: 'yak', label: 'Yak gray', charged: true, prefix: 'CUSYAKGREY' },
+    { id: 'yak', label: 'Yak gray', charged: true, prefix: 'CUSYAKGREY', maxLength: 6 },
     { id: 'highHeat', label: 'High Heat gray', charged: true, prefix: 'CUSHHGREY' },
     { id: 'cwh', label: 'Chinese White Hair (CWH)', charged: true, prefix: 'CUSCWH', byPercent: true, maxLength: 6 }
   ];
@@ -69,6 +69,7 @@
   // Extra density charge, straight off the pricing list.
   var DENSITY_BANDS = [
     { min: 0, max: 149.999, rate: 0, label: 'Under 150% — no extra charge' },
+    { id: 'under100', rate: 0, label: 'Under 100% — no extra charge' },
     { min: 150, max: 170, rate: 0.5, label: '150% – 170% — +50% of the subtotal' },
     { min: 170.001, max: 180, rate: 0.75, label: '180% — +75% of the subtotal' },
     { min: 180.001, max: Infinity, rate: 1, label: '181% and up — +100% of the subtotal' }
@@ -98,6 +99,20 @@
   }
 
   /* ---------- size ---------- */
+
+  // 8" x 10" is a 3/4 Cap at New Image but a Top of Head at HVI. Same price either
+  // way on our list, but the rep has to know before the order is processed.
+  var HVI_TOH_DIMENSIONS = [[8, 10]];
+
+  function isHviTohSize(width, length) {
+    var w = Number(width), l = Number(length);
+    if (!(w > 0) || !(l > 0)) return false;
+    for (var i = 0; i < HVI_TOH_DIMENSIONS.length; i++) {
+      var a = HVI_TOH_DIMENSIONS[i][0], b = HVI_TOH_DIMENSIONS[i][1];
+      if ((w === a && l === b) || (w === b && l === a)) return true;
+    }
+    return false;
+  }
 
   function tierFromArea(area) {
     if (!(area > 0)) return null;
@@ -142,9 +157,14 @@
 
   /* ---------- density ---------- */
 
+  var UNDER_100 = 'under100';
+
   function densityBand(pct) {
+    if (pct === UNDER_100) return byId(DENSITY_BANDS, UNDER_100);
     for (var i = 0; i < DENSITY_BANDS.length; i++) {
-      if (pct >= DENSITY_BANDS[i].min && pct <= DENSITY_BANDS[i].max) return DENSITY_BANDS[i];
+      var b = DENSITY_BANDS[i];
+      if (b.min === undefined) continue;
+      if (pct >= b.min && pct <= b.max) return b;
     }
     return DENSITY_BANDS[0];
   }
@@ -221,7 +241,22 @@
           out.lines[out.lines.length - 1].note =
             'The ' + byId(HAIR_TYPES, hairTypeId).label + ' extra charge is already built into this price line.';
         }
+        var typeCap = byId(HAIR_TYPES, hairTypeId);
+        if (mode === 'unit' && typeCap && typeCap.maxQuoteLength && requested > typeCap.maxQuoteLength) {
+          out.warnings.push(
+            typeCap.label + ' only goes up to ' + typeCap.maxQuoteLength + '" — this quote is for ' +
+            requested + '". Confirm with the Custom Department before quoting it.'
+          );
+        }
       }
+    }
+
+    if (isHviTohSize(input.width, input.length)) {
+      out.warnings.push(
+        'An 8" x 10" is a 3/4 Cap for New Image, but a Top of Head for HVI. The price above is ' +
+        'the 3/4 Cap price. If this order is processed through HVI, switch the size control to ' +
+        '"Circumference / pick tier" and select Top of Head so the quote is accurate.'
+      );
     }
 
     if (mode === 'repair') {
@@ -311,11 +346,17 @@
 
     /* density — applied to the whole subtotal, last */
     out.subtotal = round2(out.subtotal);
-    var pct = Number(input.density);
-    if (!(pct > 0)) pct = 100;
+    var pct;
+    if (input.density === UNDER_100) {
+      pct = UNDER_100;
+    } else {
+      pct = Number(input.density);
+      if (!(pct > 0)) pct = 100;
+    }
     var band = densityBand(pct);
     out.density = {
-      percent: pct,
+      // Reads as "Density under 100%" / "Density 150%" wherever it is printed.
+      percent: pct === UNDER_100 ? 'under 100' : pct,
       rate: band.rate,
       amount: round2(out.subtotal * band.rate),
       label: band.label
@@ -345,6 +386,8 @@
     priceOf: priceOf,
     describe: describe,
     tierFromArea: tierFromArea,
+    isHviTohSize: isHviTohSize,
+    UNDER_100: UNDER_100,
     availableLengths: availableLengths,
     baseCode: baseCode,
     quote: quote
